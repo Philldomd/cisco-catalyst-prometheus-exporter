@@ -25,27 +25,43 @@ func metricsHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("Hello!\n"))
 }
 
-func startTLSService(lg *log.Logger, cfg configHandler.Config) {
-  lg.Printf("Starting https server at port %d\n", cfg.Server.Port)
+func startTLSService(lg *log.Logger, cfg map[string]interface{}) {
+	port := 9000
+	if cfg_port, exist := cfg["server"].(map[string]interface{})["port"]; exist {
+		port = cfg_port.(int)
+	}
+	var crt, key string = "", ""
+	if cfg_certificate, exist := cfg["certificate"].(map[string]interface{}); exist {
+    crt, _ = cfg_certificate["crt"].(string)
+		key, _ = cfg_certificate["key"].(string) 
+	} else {
+		panic("TLS certicifates missing in configuration!")
+	}
+  lg.Printf("Starting https server at port %d\n", port)
 	http.HandleFunc("/metrics", metricsHandler)
-	if err := http.ListenAndServeTLS(":"+strconv.Itoa(cfg.Server.Port), cfg.Certificate.Crt, cfg.Certificate.Key, nil); err != nil {
+	if err := http.ListenAndServeTLS(":"+strconv.Itoa(port), crt, key, nil); err != nil {
 		lg.Fatal("ListenAndServeTLS: ", err)
 	}
 }
 
-func startService(lg *log.Logger, cfg configHandler.Config) {
-	lg.Printf("Starting http service at port %d", cfg.Server.Port)
+func startService(lg *log.Logger, cfg map[string]interface{}) {
+	port := 9000
+	if cfg_port, exist := cfg["server"].(map[string]interface{})["port"]; exist {
+		port = cfg_port.(int)
+	}
+	lg.Printf("Starting http service at port %d", port)
 	http.HandleFunc("/metrics", metricsHandler)
-  if err := http.ListenAndServe(":"+strconv.Itoa(cfg.Server.Port), nil); err != nil {
+  if err := http.ListenAndServe(":"+strconv.Itoa(port), nil); err != nil {
 		lg.Fatal("ListenAndServe: ", err)
 	}
 }
 
 func main() {
-	var config configHandler.Config
+	var config map[string]interface{}
 	configHandler.GetConfig(&config)
+	
 	lg := log.Default()
-	if config.Certificate.Crt != "" && config.Certificate.Key != "" {
+	if _, exist := config["certificate"].(map[string]interface{})["crt"]; exist {
 	  startTLSService(lg, config)
   } else {
 		startService(lg, config)

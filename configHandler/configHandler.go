@@ -3,22 +3,11 @@ package configHandler
 import (
 	"fmt"
 	"os"
-	"strings"
-	"strconv"
+	//"strings"
+	//"strconv"
 
 	"gopkg.in/yaml.v3"
 )
-
-type Config struct {
-	Server struct {
-	  Name string `yaml:"name"` //SERVER_NAME
-	  Port int `yaml:"port"` //SERVER_PORT
-	}
-	Certificate struct {
-	  Crt string `yaml:"crt"` //CERT_CRT
-	  Key string `yaml:"key"` //CERT_KEY
-	}
-}
 
 func check(e error) {
   if e != nil {
@@ -26,7 +15,7 @@ func check(e error) {
 	}
 }
 
-func loadConfigFromFile(path string, c *Config) {
+func loadConfigFromFile(path string, c *map[string]interface{}) {
 	if _, err := os.Stat(path); err != nil {
 		fmt.Println("ERROR: File not found!")
 		return
@@ -38,8 +27,8 @@ func loadConfigFromFile(path string, c *Config) {
 	}
 }
 
-func assignEnvironmentValues(c *Config) {
-	for _, e := range os.Environ(){
+func assignEnvironmentValues(c *map[string]interface{}) {
+	/*for _, e := range os.Environ(){
 		switch value := strings.Split(e, "="); value[0] {
 		case "SERVER_NAME":
 			c.Server.Name = value[1]
@@ -50,13 +39,13 @@ func assignEnvironmentValues(c *Config) {
 		case "CERT_KEY":
 			c.Certificate.Key = value[1]
 		}
-	}
+	}*/
 }
 
 /*Tries to load config from config files. If ENV values is present this will
 have higher priority. Default path: /var/cisco-dna/config.yaml
 */
-func GetConfig(c *Config) {
+func GetConfig(c *map[string]interface{}) {
 	if os.Getenv("DNA_CONFIG_PATH") != ""{
 	  loadConfigFromFile(os.Getenv("DNA_CONFIG_PATH"), c)
 	} else {
