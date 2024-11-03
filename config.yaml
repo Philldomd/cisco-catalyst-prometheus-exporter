@@ -1,0 +1,14 @@
+server:
+  name: 127.0.0.1
+  port: 9000
+certificate:
+  crt: certificate/server.crt
+  key: certificate/server.key
+cisco:
+  dna_url: 
+  auth_url: /dna/system/api/v1/auth/token
+  token:
+  site_health: /dna/intent/api/v1/site-health
+  network_health: /dna/intent/api/v1/network-health
+  client_health: /dna/intent/api/v1/client-health
+  devices_list: /dna/intent/api/v1/network-device
