@@ -1,9 +1,10 @@
 package main
 
 import (
+	"cisco-dna-prometheus-exporter/configHandler"
 	"log"
 	"net/http"
-	"cisco-dna-prometheus-exporter/configHandler"
+	"strconv"
 )
 
 func metricsHandler(w http.ResponseWriter, r *http.Request) {
@@ -24,12 +25,29 @@ func metricsHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("Hello!\n"))
 }
 
-func main() {
-	config = configHandler()
-	lg := log.Default()
-	lg.Printf("Starting server at port 9000\n")
+func startTLSService(lg *log.Logger, cfg configHandler.Config) {
+  lg.Printf("Starting https server at port %d\n", cfg.Server.Port)
 	http.HandleFunc("/metrics", metricsHandler)
-	if err := http.ListenAndServeTLS(":9000", "certificate/server.crt", "certificate/server.key", nil); err != nil {
+	if err := http.ListenAndServeTLS(":"+strconv.Itoa(cfg.Server.Port), cfg.Certificate.Crt, cfg.Certificate.Key, nil); err != nil {
+		lg.Fatal("ListenAndServeTLS: ", err)
+	}
+}
+
+func startService(lg *log.Logger, cfg configHandler.Config) {
+	lg.Printf("Starting http service at port %d", cfg.Server.Port)
+	http.HandleFunc("/metrics", metricsHandler)
+  if err := http.ListenAndServe(":"+strconv.Itoa(cfg.Server.Port), nil); err != nil {
 		lg.Fatal("ListenAndServe: ", err)
+	}
+}
+
+func main() {
+	var config configHandler.Config
+	configHandler.GetConfig(&config)
+	lg := log.Default()
+	if config.Certificate.Crt != "" && config.Certificate.Key != "" {
+	  startTLSService(lg, config)
+  } else {
+		startService(lg, config)
 	}
 }
