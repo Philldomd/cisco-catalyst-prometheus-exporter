@@ -2,10 +2,12 @@ package main
 
 import (
 	"cisco-dna-prometheus-exporter/configHandler"
-	"log"
+	"cisco-dna-prometheus-exporter/CDNALogger"
+	"log/slog"
 	"net/http"
-	"strconv"
 )
+
+var DEFAULT_PORT string = "9000"
 
 func metricsHandler(w http.ResponseWriter, r *http.Request) {
 	if r.URL.Path != "/metrics" {
@@ -25,10 +27,10 @@ func metricsHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("Hello!\n"))
 }
 
-func startTLSService(lg *log.Logger, cfg map[string]interface{}) {
-	port := 9000
+func startTLSService(lg *slog.Logger, cfg map[string]interface{}) {
+	port := DEFAULT_PORT
 	if cfg_port, exist := cfg["server"].(map[string]interface{})["port"]; exist {
-		port = cfg_port.(int)
+		port = cfg_port.(string)
 	}
 	var crt, key string = "", ""
 	if cfg_certificate, exist := cfg["certificate"].(map[string]interface{}); exist {
@@ -37,32 +39,36 @@ func startTLSService(lg *log.Logger, cfg map[string]interface{}) {
 	} else {
 		panic("TLS certicifates missing in configuration!")
 	}
-  lg.Printf("Starting https server at port %d\n", port)
+  lg.Info("Starting https server at port " + port)
 	http.HandleFunc("/metrics", metricsHandler)
-	if err := http.ListenAndServeTLS(":"+strconv.Itoa(port), crt, key, nil); err != nil {
-		lg.Fatal("ListenAndServeTLS: ", err)
+	if err := http.ListenAndServeTLS(":" + port, crt, key, nil); err != nil {
+		lg.Error("ListenAndServeTLS: " + err.Error())
 	}
 }
 
-func startService(lg *log.Logger, cfg map[string]interface{}) {
-	port := 9000
+func startService(lg *slog.Logger, cfg map[string]interface{}) {
+	port := DEFAULT_PORT
 	if cfg_port, exist := cfg["server"].(map[string]interface{})["port"]; exist {
-		port = cfg_port.(int)
+		port = cfg_port.(string)
 	}
-	lg.Printf("Starting http service at port %d", port)
+	lg.Info("Starting http service at port " + port)
 	http.HandleFunc("/metrics", metricsHandler)
-  if err := http.ListenAndServe(":"+strconv.Itoa(port), nil); err != nil {
-		lg.Fatal("ListenAndServe: ", err)
+  if err := http.ListenAndServe(":" +  port, nil); err != nil {
+		lg.Error("ListenAndServe: " + err.Error())
 	}
 }
 
 func main() {
+	lg := CDNALogger.InitLogger()
 	var config map[string]interface{}
-	configHandler.GetConfig(&config)
+	configHandler.GetConfig(lg, &config)
 	
-	lg := log.Default()
-	if _, exist := config["certificate"].(map[string]interface{})["crt"]; exist {
-	  startTLSService(lg, config)
+	if c, exist := config["certificate"]; exist{ 
+		if _, exist := c.(map[string]interface{})["crt"]; exist {
+	    startTLSService(lg, config)
+    } else {
+	  	startService(lg, config)
+	  }
   } else {
 		startService(lg, config)
 	}

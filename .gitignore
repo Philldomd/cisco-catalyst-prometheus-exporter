@@ -2,3 +2,5 @@ certificate
 .*
 !/.gitignore
 go.sum
+*.log
+testfiles
