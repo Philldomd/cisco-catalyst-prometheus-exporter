@@ -1,4 +1,4 @@
-module cisco-dna-prometheus-exporter
+module cisco-catalyst-prometheus-exporter
 
 go 1.23.2
 

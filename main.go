@@ -1,8 +1,8 @@
 package main
 
 import (
-	"cisco-dna-prometheus-exporter/configHandler"
-	"cisco-dna-prometheus-exporter/CDNALogger"
+	"cisco-catalyst-prometheus-exporter/configHandler"
+	"cisco-catalyst-prometheus-exporter/Logger"
 	"log/slog"
 	"net/http"
 )
@@ -59,7 +59,7 @@ func startService(lg *slog.Logger, cfg map[string]interface{}) {
 }
 
 func main() {
-	lg := CDNALogger.InitLogger()
+	lg := Logger.InitLogger()
 	var config map[string]interface{}
 	configHandler.GetConfig(lg, &config)
 	

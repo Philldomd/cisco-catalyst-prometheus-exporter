@@ -1,4 +1,4 @@
-# cisco-dna-prometheus-exporter
+# cisco-catalyst-prometheus-exporter
 This repository is a direct reimplementation of [Hawar Koyi](https://hawar.no/2021/05/cisco-dna-center-with-grafana-dashboard/) DNA dashboard but in Golang. This does not require any database, instead it will call the healt and metric ports upon scraping and deliver the information in prometheus format.
 ## Contribution
 ---
