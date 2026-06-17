@@ -1,8 +1,9 @@
 package main
 
 import (
-	"cisco-catalyst-prometheus-exporter/configHandler"
 	"cisco-catalyst-prometheus-exporter/Logger"
+	"cisco-catalyst-prometheus-exporter/configHandler"
+	"cisco-catalyst-prometheus-exporter/probes"
 	"log/slog"
 	"net/http"
 )
@@ -20,9 +21,9 @@ func metricsHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if r.Header.Get("Accept") == "application/openmetrics-text" {
-	  w.Header().Set("Content-Type", "application/openmetrics-text")
+		w.Header().Set("Content-Type", "application/openmetrics-text")
 	} else {
-    w.Header().Set("Content-Type", "text/plain")
+		w.Header().Set("Content-Type", "text/plain")
 	}
 	w.Write([]byte("Hello!\n"))
 }
@@ -34,14 +35,14 @@ func startTLSService(lg *slog.Logger, cfg map[string]interface{}) {
 	}
 	var crt, key string = "", ""
 	if cfg_certificate, exist := cfg["certificate"].(map[string]interface{}); exist {
-    crt, _ = cfg_certificate["crt"].(string)
-		key, _ = cfg_certificate["key"].(string) 
+		crt, _ = cfg_certificate["crt"].(string)
+		key, _ = cfg_certificate["key"].(string)
 	} else {
 		panic("TLS certicifates missing in configuration!")
 	}
-  lg.Info("Starting https server at port " + port)
+	lg.Info("Starting https server at port " + port)
 	http.HandleFunc("/metrics", metricsHandler)
-	if err := http.ListenAndServeTLS(":" + port, crt, key, nil); err != nil {
+	if err := http.ListenAndServeTLS(":"+port, crt, key, nil); err != nil {
 		lg.Error("ListenAndServeTLS: " + err.Error())
 	}
 }
@@ -53,23 +54,24 @@ func startService(lg *slog.Logger, cfg map[string]interface{}) {
 	}
 	lg.Info("Starting http service at port " + port)
 	http.HandleFunc("/metrics", metricsHandler)
-  if err := http.ListenAndServe(":" +  port, nil); err != nil {
+	if err := http.ListenAndServe(":"+port, nil); err != nil {
 		lg.Error("ListenAndServe: " + err.Error())
 	}
 }
 
 func main() {
 	lg := Logger.InitLogger()
+	probes.Init(lg)
 	var config map[string]interface{}
 	configHandler.GetConfig(lg, &config)
-	
-	if c, exist := config["certificate"]; exist{ 
+
+	if c, exist := config["certificate"]; exist {
 		if _, exist := c.(map[string]interface{})["crt"]; exist {
-	    startTLSService(lg, config)
-    } else {
-	  	startService(lg, config)
-	  }
-  } else {
+			startTLSService(lg, config)
+		} else {
+			startService(lg, config)
+		}
+	} else {
 		startService(lg, config)
 	}
 }

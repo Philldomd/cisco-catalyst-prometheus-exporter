@@ -1,4 +1,4 @@
-package CDNALogger
+package Logger
 
 import (
 	"log/slog"
@@ -6,32 +6,31 @@ import (
 	"strings"
 )
 
-var CDNA_LOG_LEVEL slog.Leveler
-var CDNA_LOG_PATH *os.File
+var CCPE_LOG_LEVEL slog.Leveler
+var CCPE_LOG_PATH *os.File = os.Stdout
 
 func configLogger() {
 	for _, e := range os.Environ() {
 		value := strings.Split(e, "=")
-		if value[0] == "CDNA_LOG_LEVEL" {
-			switch value[1] {
-		    case "Debug":
-		      CDNA_LOG_LEVEL = slog.LevelDebug
-				case "Warning":
-					CDNA_LOG_LEVEL = slog.LevelWarn
-				case "Error":
-					CDNA_LOG_LEVEL = slog.LevelError
-				default:
-					CDNA_LOG_LEVEL = slog.LevelInfo
-		  } 
-		} else if value[0] == "CDNA_LOG_PATH" {
-		  if strings.Contains(value[1], "/") {
+		switch value[0] {
+			case "CCPE_LOG_LEVEL":
+				switch value[1] {
+					case "Debug":
+						CCPE_LOG_LEVEL = slog.LevelDebug
+					case "Warning":
+						CCPE_LOG_LEVEL = slog.LevelWarn
+					case "Error":
+						CCPE_LOG_LEVEL = slog.LevelError
+					default:
+						CCPE_LOG_LEVEL = slog.LevelInfo
+				}
+			case "CCPE_LOG_PATH":
+			if strings.Contains(value[1], "/") {
 				file, err := os.Create(value[1])
 				if err != nil {
 					panic("Could not open file for writing!")
 				}
-				CDNA_LOG_PATH = file
-			} else {
-				CDNA_LOG_PATH = os.Stdout
+				CCPE_LOG_PATH = file
 			}
 		}
 	}
@@ -39,6 +38,6 @@ func configLogger() {
 
 func InitLogger() (*slog.Logger){
 	configLogger()
-	th := slog.NewTextHandler(CDNA_LOG_PATH, &slog.HandlerOptions{ Level: CDNA_LOG_LEVEL })
+	th := slog.NewTextHandler(CCPE_LOG_PATH, &slog.HandlerOptions{ Level: CCPE_LOG_LEVEL })
 	return slog.New(th)
 }
